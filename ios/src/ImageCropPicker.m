@@ -420,45 +420,67 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
 - (void) handleVideo:(AVAsset*)asset withFileName:(NSString*)fileName withLocalIdentifier:(NSString*)localIdentifier completion:(void (^)(NSDictionary* image))completion {
     NSURL *sourceURL = [(AVURLAsset *)asset URL];
     
-    // create temp file
-    NSString *tmpDirFullPath = [self getTmpDirectory];
-    NSString *filePath = [tmpDirFullPath stringByAppendingString:[[NSUUID UUID] UUIDString]];
-    filePath = [filePath stringByAppendingString:@".mp4"];
-    NSURL *outputURL = [NSURL fileURLWithPath:filePath];
-    
-    [self.compression compressVideo:sourceURL outputURL:outputURL withOptions:self.options handler:^(AVAssetExportSession *exportSession) {
-        if (exportSession.status == AVAssetExportSessionStatusCompleted) {
-            AVAsset *compressedAsset = [AVAsset assetWithURL:outputURL];
-            AVAssetTrack *track = [[compressedAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
-            
+    if ([[self.options objectForKey:@"convertToMp4"] boolValue]){
+        // create temp file
+        NSString *tmpDirFullPath = [self getTmpDirectory];
+        NSString *filePath = [tmpDirFullPath stringByAppendingString:[[NSUUID UUID] UUIDString]];
+        filePath = [filePath stringByAppendingString:@".mp4"];
+        NSURL *outputURL = [NSURL fileURLWithPath:filePath];
+        
+        [self.compression compressVideo:sourceURL outputURL:outputURL withOptions:self.options handler:^(AVAssetExportSession *exportSession) {
+            if (exportSession.status == AVAssetExportSessionStatusCompleted) {
+                AVAsset *compressedAsset = [AVAsset assetWithURL:outputURL];
+                AVAssetTrack *track = [[compressedAsset tracksWithMediaType:AVMediaTypeVideo] firstObject];
+                
+                NSNumber *fileSizeValue = nil;
+                [outputURL getResourceValue:&fileSizeValue
+                                     forKey:NSURLFileSizeKey
+                                      error:nil];
+                
+                AVURLAsset *durationFromUrl = [AVURLAsset assetWithURL:outputURL];
+                CMTime time = [durationFromUrl duration];
+                int milliseconds = ceil(time.value/time.timescale) * 1000;
+                
+                completion([self createAttachmentResponse:[outputURL absoluteString]
+                                                 withExif:nil
+                                            withSourceURL:[sourceURL absoluteString]
+                                      withLocalIdentifier:localIdentifier
+                                             withFilename:fileName
+                                                withWidth:[NSNumber numberWithFloat:track.naturalSize.width]
+                                               withHeight:[NSNumber numberWithFloat:track.naturalSize.height]
+                                                 withMime:@"video/mp4"
+                                                 withSize:fileSizeValue
+                                             withDuration:[NSNumber numberWithFloat:milliseconds]
+                                                 withData:nil
+                                                 withRect:CGRectNull
+                                         withCreationDate:nil
+                                     withModificationDate:nil
+                            ]);
+            } else {
+                completion(nil);
+            }
+        }];} else {
             NSNumber *fileSizeValue = nil;
-            [outputURL getResourceValue:&fileSizeValue
+            [sourceURL getResourceValue:&fileSizeValue
                                  forKey:NSURLFileSizeKey
                                   error:nil];
+            NSURLRequest* fileUrlRequest = [[NSURLRequest alloc] initWithURL:sourceURL cachePolicy:NSURLCacheStorageNotAllowed timeoutInterval:.1];
+
+            NSError* error = nil;
+            NSURLResponse* response = nil;
+            NSData* fileData = [NSURLConnection sendSynchronousRequest:fileUrlRequest returningResponse:&response error:&error];
+
+
+            NSString* mimeType = [response MIMEType];
             
-            AVURLAsset *durationFromUrl = [AVURLAsset assetWithURL:outputURL];
-            CMTime time = [durationFromUrl duration];
-            int milliseconds = ceil(time.value/time.timescale) * 1000;
-            
-            completion([self createAttachmentResponse:[outputURL absoluteString]
-                                             withExif:nil
-                                        withSourceURL:[sourceURL absoluteString]
-                                  withLocalIdentifier:localIdentifier
-                                         withFilename:fileName
-                                            withWidth:[NSNumber numberWithFloat:track.naturalSize.width]
-                                           withHeight:[NSNumber numberWithFloat:track.naturalSize.height]
-                                             withMime:@"video/mp4"
-                                             withSize:fileSizeValue
-                                         withDuration:[NSNumber numberWithFloat:milliseconds]
-                                             withData:nil
-                                             withRect:CGRectNull
-                                     withCreationDate:nil
-                                 withModificationDate:nil
-                        ]);
-        } else {
-            completion(nil);
+            completion(@{
+                @"sourceURL": [sourceURL absoluteString],
+                @"filename": fileName,
+                @"size": fileSizeValue,
+                @"mime": mimeType,
+                @"path": [sourceURL absoluteString]
+            });
         }
-    }];
 }
 
 - (void) getVideoAsset:(PHAsset*)forAsset completion:(void (^)(NSDictionary* image))completion {
