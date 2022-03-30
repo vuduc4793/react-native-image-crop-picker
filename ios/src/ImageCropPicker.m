@@ -72,7 +72,8 @@ RCT_EXPORT_MODULE();
             @"sortOrder": @"none",
             @"cropperCancelText": @"Cancel",
             @"cropperChooseText": @"Choose",
-            @"cropperRotateButtonsHidden": @NO
+            @"cropperRotateButtonsHidden": @NO,
+            @"convertToMp4": @YES
         };
         self.compression = [[Compression alloc] init];
     }
