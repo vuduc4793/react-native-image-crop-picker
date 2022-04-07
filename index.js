@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import {NativeModules} from 'react-native';
+import { NativeModules } from "react-native";
 
 const ImageCropPicker = NativeModules.ImageCropPicker;
 
