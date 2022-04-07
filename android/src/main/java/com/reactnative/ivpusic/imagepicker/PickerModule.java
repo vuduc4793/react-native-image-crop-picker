@@ -520,8 +520,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             retriever.setDataSource(path);
 
             return Long.parseLong(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             return -1L;
         }
     }
@@ -551,6 +550,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
                             video.putInt("duration", (int) duration);
                             video.putString("path", "file://" + videoPath);
                             video.putString("modificationDate", String.valueOf(modificationDate));
+                            video.putString("filename", new File(videoPath).getName());
 
                             resultCollector.notifySuccess(video);
                         } catch (Exception e) {
@@ -621,7 +621,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
         image.putString("mime", options.outMimeType);
         image.putInt("size", (int) new File(compressedImagePath).length());
         image.putString("modificationDate", String.valueOf(modificationDate));
-
+        image.putString("filename", new File(compressedImagePath).getName());
         if (includeBase64) {
             image.putString("data", getBase64StringFromFile(compressedImagePath));
         }
