@@ -549,8 +549,8 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
                             video.putInt("size", (int) new File(videoPath).length());
                             video.putInt("duration", (int) duration);
                             video.putString("path", "file://" + videoPath);
-                            video.putString("modificationDate", String.valueOf(modificationDate));
                             video.putString("filename", new File(videoPath).getName());
+                            video.putString("modificationDate", String.valueOf(modificationDate));
 
                             resultCollector.notifySuccess(video);
                         } catch (Exception e) {
@@ -620,8 +620,9 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
         image.putInt("height", options.outHeight);
         image.putString("mime", options.outMimeType);
         image.putInt("size", (int) new File(compressedImagePath).length());
-        image.putString("modificationDate", String.valueOf(modificationDate));
         image.putString("filename", new File(compressedImagePath).getName());
+        image.putString("modificationDate", String.valueOf(modificationDate));
+
         if (includeBase64) {
             image.putString("data", getBase64StringFromFile(compressedImagePath));
         }
